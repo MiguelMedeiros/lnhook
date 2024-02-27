@@ -55,33 +55,4 @@ router.get('/verify/:id', async (req, res) => {
   res.json({ preimage, settled })
 })
 
-router.post('/webhook', async (req, res) => {
-  const log = bunyan.createLogger({ name: 'webhook' })
-
-  const webhookSchema = z.object({
-    id: z.string().min(1),
-    settled: z.boolean(),
-    preimage: z.string().optional(),
-  })
-
-  const parsedRequest = webhookSchema.parse(req.body)
-
-
-  if (parsedRequest.settled && parsedRequest.preimage) {
-    const computedId = crypto
-      .createHash('sha256')
-      .update(Buffer.from(parsedRequest.preimage, 'hex'))
-      .digest('hex')
-
-    if (computedId === parsedRequest.id) {
-      log.info('Webhook received and verified')
-    } else {
-      log.error('Webhook received but failed verification')
-    }
-  }
-
-  log.info({ body: req.body })
-  return res.status(200).send()
-})
-
 export { router }
