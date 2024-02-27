@@ -1,6 +1,9 @@
 import express from 'express'
 import { env } from './env'
 import { router } from './routes'
+import { createLogger } from 'bunyan'
+
+const log = createLogger({ name: 'server' })
 
 const app = express()
 
@@ -12,7 +15,7 @@ let isInitialized = false
 export function startServer() {
   if (!isInitialized) {
     app.listen(env.PORT, () => {
-      console.log(`Server is running on port ${env.PORT}`)
+      log.info({ port: env.PORT }, 'Server is running')
       isInitialized = true
     })
   }

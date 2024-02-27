@@ -2,7 +2,6 @@ import express from 'express'
 import { z } from 'zod'
 import { isInvoicePaid, validateInvoice, wrapInvoice } from './lnd'
 const router = express.Router()
-const bunyan = require('bunyan')
 import crypto from 'node:crypto'
 
 router.post('/wrap', async (req, res) => {
