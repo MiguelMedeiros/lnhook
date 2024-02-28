@@ -1,20 +1,21 @@
+import crypto from 'node:crypto'
+import axios from 'axios'
+import bunyan from 'bunyan'
 import {
   DecodePaymentRequestResult,
   GetInvoiceResult,
   authenticatedLndGrpc,
-   cancelHodlInvoice,
-   createHodlInvoice,
-   decodePaymentRequest,
-   getInvoice,
-   pay,
-   settleHodlInvoice,
-   subscribeToInvoice
+  cancelHodlInvoice,
+  createHodlInvoice,
+  decodePaymentRequest,
+  getInvoice,
+  pay,
+  settleHodlInvoice,
+  subscribeToInvoice
 } from 'lightning'
+import { io } from './server'
 import { env } from './env'
-import bunyan from 'bunyan'
 const log = bunyan.createLogger({ name: 'lnd' })
-import axios from 'axios'
-import crypto from 'node:crypto'
 
 const { lnd } = authenticatedLndGrpc({
   cert: env.LND_CERT,
@@ -77,17 +78,25 @@ export async function wrapInvoice(invoice: DecodePaymentRequestResult, request: 
         const { secret } = await pay({ lnd, request })
         await settleHodlInvoice({ lnd, secret })
 
-        if (webhook) {
-          const computedId = crypto
+        const computedId = crypto
             .createHash('sha256')
             .update(Buffer.from(secret, 'hex'))
             .digest('hex')
-          axios.post(webhook, {
-            id: hodlInvoice.id,
-            settled: computedId === hodlInvoice.id,
-            preimage: secret,
-          })
+
+        const log = bunyan.createLogger({ name: 'lnd' })
+        log.info({ id: hodlInvoice.id }, 'Invoice settled')
+
+        const data = {
+          id: hodlInvoice.id,
+          settled: computedId === hodlInvoice.id,
+          preimage: secret,
         }
+
+        if (webhook) {
+          axios.post(webhook, data)
+        }
+
+        io.emit(hodlInvoice.id, data)
       } catch (error) {
         log.error({ error }, 'Error paying invoice')
         await cancelHodlInvoice({ lnd, id: hodlInvoice.id })

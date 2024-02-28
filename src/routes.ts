@@ -39,9 +39,15 @@ router.post('/wrap', async (req, res) => {
 router.get('/verify/:id', async (req, res) => {
   const { id } = req.params
 
-  const { preimage } = await isInvoicePaid(id)
+  let preimage: string | null = null
+  let settled = false
 
-  let settled: any = false
+  try {
+    const invoice = await isInvoicePaid(id)
+    preimage = invoice.preimage
+  } catch (error) {
+    //
+  }
 
   if (preimage) {
     const computedId = crypto
