@@ -66,14 +66,16 @@ export async function wrapInvoice(
   const estimatedFee = probe.route.safe_fee
   const serviceFee = Math.ceil(originalAmount * env.SERVICE_FEE_PERCENT)
   const finalAmount = originalAmount + estimatedFee + serviceFee
+  const delta = invoice.cltv_delta || 80
 
-  log.info({ id: invoice.id, originalAmount, finalAmount, estimatedFee, serviceFee }, 'Route found')
+  log.info({ id: invoice.id, originalAmount, finalAmount, estimatedFee, serviceFee, delta }, 'Route found')
 
   const { request: hodlRequest } = await createHodlInvoice({
     lnd,
     tokens: finalAmount,
     id: invoice.id,
     expires_at: invoice.expires_at,
+    cltv_delta: delta + 40,
   })
 
   const sub = subscribeToInvoice({ lnd, id: invoice.id })
