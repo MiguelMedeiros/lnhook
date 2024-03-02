@@ -48,7 +48,12 @@ export async function validateInvoice(request: string) {
   }
 }
 
-export async function wrapInvoice(invoice: DecodePaymentRequestResult, request: string, webhook?: string) {
+export async function wrapInvoice(
+  invoice: DecodePaymentRequestResult,
+  request: string,
+  webhook?: string,
+  metadata?: unknown
+) {
   const { request: hodlRequest } = await createHodlInvoice({
     lnd,
     tokens: invoice.tokens,
@@ -67,6 +72,7 @@ export async function wrapInvoice(invoice: DecodePaymentRequestResult, request: 
           id: hodlInvoice.id,
           settled: false,
           preimage: null,
+          metadata,
         })
       }
 
@@ -90,6 +96,7 @@ export async function wrapInvoice(invoice: DecodePaymentRequestResult, request: 
           id: hodlInvoice.id,
           settled: computedId === hodlInvoice.id,
           preimage: secret,
+          metadata,
         }
 
         if (webhook) {
@@ -105,6 +112,7 @@ export async function wrapInvoice(invoice: DecodePaymentRequestResult, request: 
             id: hodlInvoice.id,
             settled: false,
             preimage: null,
+            metadata,
           })
         }
       }

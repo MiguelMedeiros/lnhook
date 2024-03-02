@@ -4,10 +4,13 @@ import { isInvoicePaid, validateInvoice, wrapInvoice } from './lnd'
 const router = express.Router()
 import crypto from 'node:crypto'
 
+let metadatas = {}
+
 router.post('/wrap', async (req, res) => {
   const requestSchema = z.object({
     invoice: z.string().min(1),
     webhook: z.string().url().optional(),
+    metadata: z.unknown().optional()
   })
 
   const parsedRequest = requestSchema.safeParse(req.body)
@@ -25,7 +28,14 @@ router.post('/wrap', async (req, res) => {
   }
 
   try {
-    const wrappedInvoice = await wrapInvoice(invoice, parsedRequest.data.invoice, parsedRequest.data.webhook)
+    const wrappedInvoice = await wrapInvoice(
+      invoice,
+      parsedRequest.data.invoice,
+      parsedRequest.data.webhook,
+      parsedRequest.data.metadata
+    )
+
+    metadatas[invoice.id] = parsedRequest.data.metadata
 
     res.json({
       id: invoice.id,
@@ -57,7 +67,7 @@ router.get('/verify/:id', async (req, res) => {
     settled = computedId === id
   }
 
-  res.json({ preimage, settled })
+  res.json({ preimage, settled, metadata: metadatas[id] || {} })
 })
 
 export { router }
