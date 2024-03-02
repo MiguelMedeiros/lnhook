@@ -96,7 +96,7 @@ export async function wrapInvoice(
 
     if (hodlInvoice.is_held) {
       try {
-        const { secret } = await pay({ lnd, request })
+        const { secret } = await pay({ lnd, request, max_fee: estimatedFee })
         await settleHodlInvoice({ lnd, secret })
 
         const computedId = crypto
