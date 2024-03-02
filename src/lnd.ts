@@ -11,10 +11,14 @@ import {
   getInvoice,
   pay,
   settleHodlInvoice,
-  subscribeToInvoice
+  subscribeToInvoice,
+  probeForRoute
 } from 'lightning'
 import { io } from './server'
 import { env } from './env'
+
+const SERVICE_FEE = 0.01
+
 const log = bunyan.createLogger({ name: 'lnd' })
 
 const { lnd } = authenticatedLndGrpc({
@@ -54,9 +58,22 @@ export async function wrapInvoice(
   webhook?: string,
   metadata?: unknown
 ) {
+  const probe = await probeForRoute({ lnd, tokens: invoice.tokens, destination: invoice.destination })
+
+  if (!probe.route) {
+    throw new Error('No route found')
+  }
+
+  const originalAmount = invoice.tokens
+  const estimatedFee = probe.route.safe_fee
+  const serviceFee = Math.ceil(originalAmount * SERVICE_FEE)
+  const finalAmount = originalAmount + estimatedFee + serviceFee
+
+  log.info({ id: invoice.id, originalAmount, finalAmount, estimatedFee, serviceFee }, 'Route found')
+
   const { request: hodlRequest } = await createHodlInvoice({
     lnd,
-    tokens: invoice.tokens,
+    tokens: finalAmount,
     id: invoice.id,
     expires_at: invoice.expires_at,
   })
