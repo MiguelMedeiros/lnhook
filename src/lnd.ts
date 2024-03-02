@@ -17,8 +17,6 @@ import {
 import { io } from './server'
 import { env } from './env'
 
-const SERVICE_FEE = 0.01
-
 const log = bunyan.createLogger({ name: 'lnd' })
 
 const { lnd } = authenticatedLndGrpc({
@@ -66,7 +64,7 @@ export async function wrapInvoice(
 
   const originalAmount = invoice.tokens
   const estimatedFee = probe.route.safe_fee
-  const serviceFee = Math.ceil(originalAmount * SERVICE_FEE)
+  const serviceFee = Math.ceil(originalAmount * env.SERVICE_FEE_PERCENT)
   const finalAmount = originalAmount + estimatedFee + serviceFee
 
   log.info({ id: invoice.id, originalAmount, finalAmount, estimatedFee, serviceFee }, 'Route found')
