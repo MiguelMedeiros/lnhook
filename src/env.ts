@@ -10,6 +10,7 @@ const envSchema = z.object({
   LND_CERT: z.string(),
   LND_MACAROON: z.string(),
   SERVICE_FEE_PERCENT: z.coerce.number(),
+  HOST: z.string().url(),
 })
 
 const parsedEnv = envSchema.safeParse(process.env);

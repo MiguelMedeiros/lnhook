@@ -1,5 +1,6 @@
 import express from 'express'
 import http from 'http'
+import cors from 'cors'
 import { createLogger } from 'bunyan'
 import { Server } from 'socket.io'
 import { env } from './env'
@@ -14,6 +15,7 @@ export const io = new Server(server, {
   },
 })
 
+app.use(cors({ origin: '*' }))
 app.use(express.json())
 app.use(router)
 

@@ -1,0 +1,143 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "LNHOOK",
+    "description": "API for wrapping invoices with additional metadata and get notified when it is paid.",
+    "version": "1.3.4",
+    "contact": {
+      "email": "jaonoctus@protonmail.com",
+      "url": "https://jaonoctus.dev"
+    },
+    "license": {
+      "name": "MIT",
+      "url": "https://opensource.org/license/mit"
+    }
+  },
+  "externalDocs": {
+    "description": "Github",
+    "url": "https://github.com/jaonoctus/lnhook"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3001"
+    }
+  ],
+  "paths": {
+    "/wrap": {
+      "post": {
+        "summary": "Wrap an invoice",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "invoice"
+                ],
+                "properties": {
+                  "invoice": {
+                    "type": "string",
+                    "description": "The bolt11 request to be wrapped."
+                  },
+                  "webhook": {
+                    "type": "string",
+                    "format": "uri",
+                    "description": "Optional URL for the webhook to receive notifications."
+                  },
+                  "metadata": {
+                    "type": "object",
+                    "additionalProperties": true,
+                    "description": "Optional metadata of any shape to be associated with the invoice."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "invoice": {
+                      "type": "string",
+                      "description": "The wrapped invoice."
+                    },
+                    "id": {
+                      "type": "string",
+                      "description": "The bolt11 payment hash. MUST be the same as the original invoice."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request (e.g., missing required fields, invalid data)."
+          },
+          "500": {
+            "description": "Internal server error."
+          }
+        }
+      }
+    },
+    "/verify/{id}": {
+      "get": {
+        "summary": "Verify the status of a wrapped invoice by its payment hash",
+        "operationId": "verifyInvoice",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Bolt11 payment hash"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "preimage": {
+                      "type": "string",
+                      "nullable": true,
+                      "description": "The preimage of the wrapped invoice, if settled."
+                    },
+                    "settled": {
+                      "type": "boolean",
+                      "description": "Indicates whether the invoice has been settled."
+                    },
+                    "metadata": {
+                      "type": "object",
+                      "additionalProperties": true,
+                      "description": "Metadata associated with the invoice, if any."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request (e.g., invalid ID)."
+          },
+          "404": {
+            "description": "Invoice not found for the given ID."
+          },
+          "500": {
+            "description": "Internal server error."
+          }
+        }
+      }
+    }
+  }
+}

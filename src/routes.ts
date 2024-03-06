@@ -1,10 +1,18 @@
 import express from 'express'
+import crypto from 'node:crypto'
+import swaggerUI from 'swagger-ui-express'
 import { z } from 'zod'
 import { isInvoicePaid, validateInvoice, wrapInvoice } from './lnd'
+import { env } from './env'
+import swaggerDocument from './assets/swagger.json'
+
 const router = express.Router()
-import crypto from 'node:crypto'
 
 let metadatas = {}
+
+swaggerDocument.servers[0].url = env.HOST
+router.use('/docs', swaggerUI.serve)
+router.get('/docs', swaggerUI.setup(swaggerDocument))
 
 router.post('/wrap', async (req, res) => {
   const requestSchema = z.object({
