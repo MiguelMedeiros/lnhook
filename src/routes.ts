@@ -11,8 +11,16 @@ const router = express.Router()
 let metadatas = {}
 
 swaggerDocument.servers[0].url = env.HOST
-router.use('/docs', swaggerUI.serve)
-router.get('/docs', swaggerUI.setup(swaggerDocument))
+router.use('/api', swaggerUI.serve)
+router.get('/api', swaggerUI.setup(swaggerDocument, {
+  explorer: false,
+  swaggerOptions: {
+    supportedSubmitMethods: []
+  }
+}))
+router.get('/api-json', (req, res) => {
+  res.json(swaggerDocument)
+})
 
 router.post('/wrap', async (req, res) => {
   const requestSchema = z.object({

@@ -3,7 +3,7 @@
   "info": {
     "title": "LNHOOK",
     "description": "API for wrapping invoices with additional metadata and get notified when it is paid.",
-    "version": "1.3.4",
+    "version": "1.3.5",
     "contact": {
       "email": "jaonoctus@protonmail.com",
       "url": "https://jaonoctus.dev"
