@@ -56,19 +56,18 @@ export async function wrapInvoice(
   webhook?: string,
   metadata?: unknown
 ) {
-  const probe = await probeForRoute({ lnd, tokens: invoice.tokens, destination: invoice.destination })
+  const { estimatedRoutingFee } = await estimateRoutingFee({ tokens: invoice.tokens, destination: invoice.destination })
 
-  if (!probe.route) {
+  if (!estimatedRoutingFee) {
     throw new Error('No route found')
   }
 
   const originalAmount = invoice.tokens
-  const estimatedFee = probe.route.safe_fee
   const serviceFee = Math.ceil(originalAmount * env.SERVICE_FEE_PERCENT)
-  const finalAmount = originalAmount + estimatedFee + serviceFee
+  const finalAmount = originalAmount + estimatedRoutingFee + serviceFee
   const delta = invoice.cltv_delta || 80
 
-  log.info({ id: invoice.id, originalAmount, finalAmount, estimatedFee, serviceFee, delta }, 'Route found')
+  log.info({ id: invoice.id, originalAmount, finalAmount, estimatedRoutingFee, serviceFee, delta }, 'Route found')
 
   const { request: hodlRequest } = await createHodlInvoice({
     lnd,
@@ -98,7 +97,7 @@ export async function wrapInvoice(
 
     if (hodlInvoice.is_held) {
       try {
-        const { secret } = await pay({ lnd, request, max_fee: estimatedFee })
+        const { secret } = await pay({ lnd, request, max_fee: estimatedRoutingFee })
         await settleHodlInvoice({ lnd, secret })
 
         const computedId = crypto
@@ -138,7 +137,7 @@ export async function wrapInvoice(
     }
   })
 
-  return { request: hodlRequest }
+  return { request: hodlRequest, estimatedRoutingFee, serviceFee, originalAmount, finalAmount }
 }
 
 export async function isInvoicePaid(id: string) {
@@ -147,5 +146,17 @@ export async function isInvoicePaid(id: string) {
   return {
     settled: invoice.is_confirmed,
     preimage: invoice.is_confirmed ? invoice.secret : null,
+  }
+}
+
+export async function estimateRoutingFee({ tokens, destination }: { tokens: number; destination: string }) {
+  const { route } = await probeForRoute({ lnd, tokens, destination })
+
+  if (!route) {
+    throw new Error('No route found')
+  }
+
+  return {
+    estimatedRoutingFee: route.safe_fee,
   }
 }
