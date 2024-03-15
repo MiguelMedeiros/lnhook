@@ -44,7 +44,7 @@ router.post('/wrap', async (req, res) => {
   }
 
   try {
-    const wrappedInvoice = await wrapInvoice(
+    const { request, ...fees } = await wrapInvoice(
       invoice,
       parsedRequest.data.invoice,
       parsedRequest.data.webhook,
@@ -55,10 +55,11 @@ router.post('/wrap', async (req, res) => {
 
     res.json({
       id: invoice.id,
-      invoice: wrappedInvoice.request,
+      invoice: request,
+      ...fees,
     })
   } catch (error) {
-    res.status(400).json({ error: error })
+    res.status(400).json({ error: error.message })
   }
 })
 
